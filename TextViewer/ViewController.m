@@ -19,6 +19,7 @@ enum {
 @interface ViewController () <UITextViewDelegate>
 
 @property (nonatomic, readonly) UITextView *textView;
+@property (nonatomic, getter=isUserDragging) BOOL userDragging;
 
 @end
 
@@ -52,6 +53,7 @@ static CGFloat MaxHeight = 112;
   textView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
   textView.layer.borderColor = [[UIColor blackColor] CGColor];
   textView.layer.borderWidth = 1;
+  textView.scrollsToTop = NO;
   [view addSubview:textView];
 }
 
@@ -102,6 +104,50 @@ static CGFloat MaxHeight = 112;
     CGFloat delta = newHeight - currentHeight;
     textView.frame = CGRectMake(0, CGRectGetMinY(textView.frame) - delta, CGRectGetWidth(textView.frame), newHeight);
   }
+}
+
+#pragma mark - Scroll view delegate
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+  NSLog(@"Will begin dragging");
+  self.userDragging = YES;
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+  NSLog(@"Did end dragging, will decelarate: %@", @(decelerate));
+  self.userDragging = decelerate;
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+  NSLog(@"Did scroll: bounds: %@ size: %@ offset: %@ inset: %@",
+        NSStringFromCGRect(scrollView.bounds),
+        NSStringFromCGSize(scrollView.contentSize),
+        NSStringFromCGPoint(scrollView.contentOffset),
+        NSStringFromUIEdgeInsets(scrollView.contentInset));
+  if (!self.userDragging) {
+    CGPoint contentOffset = scrollView.contentOffset;
+    CGSize contentSize = scrollView.contentSize;
+    UIEdgeInsets contentInset = scrollView.contentInset;
+    CGSize visibleArea = CGSizeMake(CGRectGetWidth(scrollView.bounds) - contentInset.left - contentInset.right,
+                                    CGRectGetHeight(scrollView.bounds) - contentInset.top - contentInset.bottom);
+    if (contentOffset.y + visibleArea.height > contentSize.height) {
+      CGFloat maxViewableHeight = MIN(contentSize.height, visibleArea.height);
+      [scrollView scrollRectToVisible:CGRectMake(contentOffset.x,
+                                                 contentSize.height - maxViewableHeight,
+                                                 visibleArea.width,
+                                                 maxViewableHeight)
+                             animated:NO];
+    }
+  }
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+  NSLog(@"Did end decelerating: bounds: %@ size: %@ offset: %@ inset: %@",
+        NSStringFromCGRect(scrollView.bounds),
+        NSStringFromCGSize(scrollView.contentSize),
+        NSStringFromCGPoint(scrollView.contentOffset),
+        NSStringFromUIEdgeInsets(scrollView.contentInset));
+  self.userDragging = NO;
 }
 
 #pragma mark - Text View Delegate
