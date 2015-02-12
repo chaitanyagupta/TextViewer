@@ -25,6 +25,10 @@ enum {
 
 @implementation ViewController
 
+static CGFloat FontSize = 20;
+static CGFloat DefaultHeight = 40;
+static CGFloat MaxHeight = 112;
+
 - (UITextView *)textView {
   return (UITextView *)[self.view viewWithTag:TextViewTag];
 }
@@ -36,8 +40,8 @@ enum {
   self.view = view;
   CGRect bounds = view.bounds;
   
-  UIFont *font = [UIFont fontWithName:@"HelveticaNeue" size:20];
-  CGFloat defaultHeight = 40;
+  UIFont *font = [UIFont fontWithName:@"HelveticaNeue" size:FontSize];
+  CGFloat defaultHeight = DefaultHeight;
   UITextView *textView = [[UITextView alloc] initWithFrame:CGRectMake(0,
                                                                       CGRectGetHeight(bounds) - defaultHeight,
                                                                       CGRectGetWidth(bounds),
@@ -91,7 +95,7 @@ enum {
 - (void)refreshTextViewHeight {
   UITextView *textView = self.textView;
   CGSize contentSize = [self contentSizeRectForTextView:textView];
-  CGFloat newHeight = ceil(contentSize.height);
+  CGFloat newHeight = MIN(MaxHeight, ceil(contentSize.height));
   CGFloat currentHeight = CGRectGetHeight(textView.bounds);
   if (newHeight != currentHeight) {
     NSLog(@"current height: %@; new height: %@", @(currentHeight), @(newHeight));
